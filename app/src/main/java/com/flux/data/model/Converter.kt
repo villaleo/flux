@@ -33,6 +33,20 @@ class Converter {
     }
 
     @TypeConverter
+    fun fromLongList(items: List<Long>): String = items.joinToString(separator = ",")
+
+    @TypeConverter
+    fun toLongList(json: String): List<Long> {
+        return try {
+            val type = object : TypeToken<List<Long>>() {}.type
+            val items: List<Long> = Gson().fromJson(json, type)
+            items
+        } catch (_: Exception) {
+            emptyList()
+        }
+    }
+
+    @TypeConverter
     fun toTodoItemList(json: String): List<TodoItem> {
         return try {
             val type = object : TypeToken<List<TodoItem>>() {}.type

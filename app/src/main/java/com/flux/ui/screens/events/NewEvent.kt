@@ -41,10 +41,13 @@ import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -68,6 +71,7 @@ import com.flux.ui.common.convertMillisToTime
 import com.flux.ui.common.label
 import com.flux.ui.events.TaskEvents
 import com.flux.ui.state.Settings
+import kotlinx.serialization.json.Json
 import kotlin.math.max
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -87,6 +91,17 @@ fun NewEvent(
     var showRepetitionSheet by remember { mutableStateOf(false) }
     var showNotificationDialog by remember { mutableStateOf(false) }
     var notificationOffset by rememberSaveable { mutableLongStateOf(event.notificationOffset) }
+    val notificationOffsetsSaver = Saver<SnapshotStateList<Long>, String>(
+        save = { Json.encodeToString(it.toList()) },
+        restore = { encoded ->
+            mutableStateListOf<Long>().apply {
+                addAll(Json.decodeFromString<List<Long>>(encoded))
+            }
+        }
+    )
+    val notificationOffsets = rememberSaveable(saver = notificationOffsetsSaver) {
+        mutableStateListOf<Long>().apply { add(event.notificationOffset) }
+    }
     var selectedDateTime by rememberSaveable { mutableLongStateOf(event.startDateTime) }
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
     var currentRecurrenceRule by remember { mutableStateOf(event.recurrence) }
@@ -96,15 +111,22 @@ fun NewEvent(
     var showDiscardDialog by remember { mutableStateOf(false) }
 
     if (showCustomNotificationDialog) {
-        CustomNotificationDialog({
-            showCustomNotificationDialog = false
-        }) { offset -> notificationOffset = offset }
+        CustomNotificationDialog(
+            onDismissRequest = { showCustomNotificationDialog = false },
+            onConfirm = { offset ->
+                notificationOffset = offset
+                notificationOffsets.add(offset)
+            }
+        )
     }
 
     if (showNotificationDialog) {
         EventNotificationDialog(
             currentOffset = notificationOffset,
-            onChange = { offset -> notificationOffset = offset },
+            onChange = { offset ->
+                notificationOffset = offset
+                notificationOffsets.add(offset)
+            },
             onCustomClick = { showCustomNotificationDialog = true }) {
             showNotificationDialog = false
         }
@@ -132,7 +154,8 @@ fun NewEvent(
             description = description,
             endDateTime = eventEndsOn,
             recurrence = currentRecurrenceRule,
-            notificationOffset = notificationOffset
+            notificationOffset = notificationOffset,
+            notificationOffsets = notificationOffsets,
         )
         val hasContent = candidate != originalEvent
 
@@ -363,6 +386,10 @@ fun NewEvent(
                 HorizontalDivider()
             }
 
+            // TODO: Create a button "Add another notification". I'm thinking the button appears
+            //       only after you've changed the alert time from "At time of event" to any other
+            //       time.
+
             Row(
                 Modifier.fillMaxWidth().clickable { showNotificationDialog = true }.padding(16.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -371,6 +398,8 @@ fun NewEvent(
                 Icon(Icons.Outlined.NotificationsActive, null)
                 Text(getNotificationText(notificationOffset))
             }
+
+            // TODO: Additional notifications will go here.
         }
     }
 

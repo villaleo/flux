@@ -2,6 +2,7 @@ package com.flux.data.model
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import com.flux.other.ReminderReceiver
 import kotlinx.serialization.json.Json
 
@@ -15,12 +16,19 @@ data class ScheduleRequest(
     val recurrence: RecurrenceRule,
     val startDateTime: Long,
     val endDateTime: Long,
-    val notificationOffset: Long,
+    val notificationOffsets: List<Long>,
     val workspaceId: String,
     val habitConfig: HabitConfig? = null
 ) {
     companion object {
         fun fromIntent(intent: Intent): ScheduleRequest? {
+            Log.d("ScheduleReq:fromIntent", "itemId=${intent.getStringExtra("itemId")}")
+            Log.d("ScheduleReq:fromIntent", "title=${intent.getStringExtra("title")}")
+            Log.d("ScheduleReq:fromIntent", "notificationOffset=${intent.getStringExtra("notificationOffset")}")
+            Log.d("ScheduleReq:fromIntent", "notificationOffsets=${intent.getStringExtra("notificationOffsets")}")
+
+            val notificationOffsets = Json.decodeFromString<List<Long>>(intent.getStringExtra("notificationOffsets") ?: "[]")
+
             return try {
                 ScheduleRequest(
                     itemId = intent.getStringExtra("itemId") ?: return null,
@@ -34,7 +42,7 @@ data class ScheduleRequest(
                     ),
                     startDateTime = intent.getLongExtra("startDateTime", -1),
                     endDateTime = intent.getLongExtra("endDateTime", -1),
-                    notificationOffset = intent.getLongExtra("notificationOffset", 0),
+                    notificationOffsets = notificationOffsets,
                     workspaceId = intent.getStringExtra("workspaceId") ?: "",
                     habitConfig = intent.getStringExtra("habitConfig")
                         ?.let { Json.decodeFromString<HabitConfig>(it) }
@@ -44,18 +52,26 @@ data class ScheduleRequest(
     }
 }
 
-fun HabitModel.toScheduleRequest() = ScheduleRequest(
-    itemId = id,
-    itemType = ReminderType.HABIT,
-    title = title,
-    description = description,
-    recurrence = recurrence,
-    startDateTime = startDateTime,
-    endDateTime = endDateTime,
-    notificationOffset = notificationOffset,
-    workspaceId = workspaceId,
-    habitConfig = habitConfig
-)
+fun HabitModel.toScheduleRequest(): ScheduleRequest {
+    val offset = if (notificationOffset == 0L) {
+        emptyList()
+    } else {
+        listOf(notificationOffset)
+    }
+
+    return ScheduleRequest(
+        itemId = id,
+        itemType = ReminderType.HABIT,
+        title = title,
+        description = description,
+        recurrence = recurrence,
+        startDateTime = startDateTime,
+        endDateTime = endDateTime,
+        notificationOffsets = offset,
+        workspaceId = workspaceId,
+        habitConfig = habitConfig
+    )
+}
 
 fun EventModel.toScheduleRequest() = ScheduleRequest(
     itemId = id,
@@ -65,9 +81,10 @@ fun EventModel.toScheduleRequest() = ScheduleRequest(
     recurrence = recurrence,
     startDateTime = startDateTime,
     endDateTime = endDateTime,
-    notificationOffset = notificationOffset,
+    notificationOffsets = notificationOffsets,
     workspaceId = workspaceId
 )
+
 
 fun TodoModel.toScheduleRequest() = ScheduleRequest(
     itemId = id,
@@ -77,7 +94,7 @@ fun TodoModel.toScheduleRequest() = ScheduleRequest(
     recurrence = recurrence,
     startDateTime = startDateTime,
     endDateTime = -1L,
-    notificationOffset = 0L,
+    notificationOffsets = emptyList(),
     workspaceId = workspaceId
 )
 
@@ -90,7 +107,7 @@ fun ScheduleRequest.toIntent(context: Context): Intent {
         putExtra("recurrence", Json.encodeToString(recurrence))
         putExtra("startDateTime", startDateTime)
         putExtra("endDateTime", endDateTime)
-        putExtra("notificationOffset", notificationOffset)
+        putExtra("notificationOffsets", Json.encodeToString(notificationOffsets))
         putExtra("workspaceId", workspaceId)
         habitConfig?.let { putExtra("habitConfig", Json.encodeToString(it)) }
     }

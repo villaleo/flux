@@ -127,7 +127,15 @@ fun EventDetails(
                         {
                             onTaskEvents(TaskEvents.UpsertTask(
                                 context,
-                                EventModel(title = "Clone $title", description = description, recurrence = event.recurrence, endDateTime = event.endDateTime, notificationOffset = event.notificationOffset, workspaceId = event.workspaceId)
+                                EventModel(
+                                    title = "Clone $title",
+                                    description = description,
+                                    recurrence = event.recurrence,
+                                    endDateTime = event.endDateTime,
+                                    notificationOffset = event.notificationOffset,
+                                    notificationOffsets = event.notificationOffsets,
+                                    workspaceId = event.workspaceId
+                                )
                             ))
                             Toast.makeText(context, cloneString, Toast.LENGTH_SHORT).show()
                         },
@@ -213,7 +221,15 @@ fun EventDetails(
                             }
                             onTaskEvents(TaskEvents.UpsertTask(
                                 context,
-                                EventModel(title = title, description = description, recurrence = event.recurrence, endDateTime = event.endDateTime, notificationOffset = event.notificationOffset, workspaceId = workspace.workspaceId)
+                                EventModel(
+                                    title = title,
+                                    description = description,
+                                    recurrence = event.recurrence,
+                                    endDateTime = event.endDateTime,
+                                    notificationOffset = event.notificationOffset,
+                                    notificationOffsets = event.notificationOffsets,
+                                    workspaceId = workspace.workspaceId
+                                )
                             ))
                         }
 
@@ -227,7 +243,15 @@ fun EventDetails(
 
                             onTaskEvents(TaskEvents.UpsertTask(
                                 context,
-                                EventModel(title = title, description = description, recurrence = event.recurrence, endDateTime = event.endDateTime, notificationOffset = event.notificationOffset, workspaceId = workspace.workspaceId)
+                                EventModel(
+                                    title = title,
+                                    description = description,
+                                    recurrence = event.recurrence,
+                                    endDateTime = event.endDateTime,
+                                    notificationOffset = event.notificationOffset,
+                                    notificationOffsets = event.notificationOffsets,
+                                    workspaceId = workspace.workspaceId
+                                )
                             ))
                         }
 

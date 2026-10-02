@@ -35,12 +35,13 @@ import com.flux.data.model.WorkspaceModel
 import com.flux.other.PasswordHasher
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.util.UUID
 
 @Database(
     entities = [EventModel::class, LabelModel::class, EventInstanceModel::class, SettingsModel::class, NotesModel::class, HabitModel::class, HabitInstanceModel::class, WorkspaceModel::class, TodoModel::class, JournalModel::class, ProgressBoardModel::class, TodoInstance::class],
-    version = 13,
+    version = 14,
     exportSchema = false
 )
 @TypeConverters(Converter::class)
@@ -583,6 +584,18 @@ val MIGRATION_12_13 = object : Migration(12, 13) {
                     arrayOf(order++, cursor.getString(0))
                 )
             }
+        }
+    }
+}
+
+val MIGRATION_13_14 = object : Migration(13, 14) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+        if (!db.columnExists("EventModel", "notificationOffsets")) {
+            // Add 'notificationOffsets' column to support multiple notifications per event
+            db.safeExec("""
+                ALTER TABLE EventModel
+                ADD COLUMN `notificationOffsets` TEXT NOT NULL DEFAULT '[]'
+            """.trimIndent())
         }
     }
 }

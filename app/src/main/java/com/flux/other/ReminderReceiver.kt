@@ -221,18 +221,21 @@ private fun scheduleStandardReminder(
     context: Context,
     request: ScheduleRequest
 ) {
-    val now = System.currentTimeMillis()
-    var candidate = getNextOccurrence(request.recurrence, request.startDateTime) ?: return
-    var finalTime: Long
+    for (notificationOffset in request.notificationOffsets) {
+        val now = System.currentTimeMillis()
+        var candidate = getNextOccurrence(request.recurrence, request.startDateTime) ?: continue
+        var finalTime: Long
 
-    while (true) {
-        val alarmTime = candidate - request.notificationOffset
-        if (alarmTime > now) { finalTime = alarmTime; break }
-        candidate = getNextOccurrence(request.recurrence, candidate) ?: return
+        while (true) {
+            val alarmTime = candidate - notificationOffset
+            if (alarmTime > now) { finalTime = alarmTime; break }
+            candidate = getNextOccurrence(request.recurrence, candidate) ?: continue
+        }
+
+        if (request.endDateTime != -1L && finalTime > request.endDateTime) continue
+        scheduleReminder(context, request, finalTime)
     }
 
-    if (request.endDateTime != -1L && finalTime > request.endDateTime) return
-    scheduleReminder(context, request, finalTime)
 }
 
 private fun scheduleNextCountedReminder(

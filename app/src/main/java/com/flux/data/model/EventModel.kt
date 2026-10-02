@@ -19,6 +19,7 @@ data class EventModel(
     val startDateTime: Long = System.currentTimeMillis(),
     val endDateTime: Long = -1L,
     val notificationOffset: Long = 0L,
+    val notificationOffsets: List<Long> = emptyList(),
     val workspaceId: String = ""
 )
 
